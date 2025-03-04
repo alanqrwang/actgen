@@ -1,0 +1,33 @@
+{
+    "run_name": "age_regressor_for_evaluation_t1all_agebalanced_batch1_lr0.0001",
+    "run_mode": "train",
+    "label_name": "age",
+    "pretrain_type": null,
+    "grad_loss_weight": 5,
+    "mask_ratio": 0.75,
+    "dataset_type":"t1all_agebalanced",
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "batch_size": 1,
+    "lr": 1e-4,
+    "n_epochs": 10000,
+    "steps_per_epoch": 100,
+    "val_steps_per_epoch": 100,
+    "num_workers": 2,
+    "use_amp": false,
+    "seed": 23,
+    "weight_decay": 0,
+    "visualize": true,
+    "pretrained_load_path": "/simurgh/u/deantran/rssl/experiments/sslmae_pretrain_maskratio_ablation/pretrain_sslmae_mask0.75_datat1fangrui_batch1_lr0.0001/checkpoints/pretrained_epoch2650_model.pth.tar",
+    "encoder_def": {
+        "_target_": "rssl.net.UNet3DEncoder",
+        "in_channels": 1,
+        "out_channels": null,
+        "final_sigmoid": false,
+        "f_maps": 32,
+        "layer_order": "gcr",
+        "num_levels": 4,
+        "is_segmentation": false,
+        "conv_padding": 1
+    }
+}

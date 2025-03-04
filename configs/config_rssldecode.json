@@ -1,0 +1,33 @@
+{
+    "run_name": "group_noamp_wd0",
+    "pretrain_type": "rssldecode",
+    "pretrain_loss_fn": "mse+grad",
+    "grad_loss_weight": 5,
+    "mask_ratio": 0.75,
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "out_channels": 3,
+    "batch_size": 1,
+    "lr": 1e-4,
+    "n_epochs": 10000,
+    "num_workers": 2,
+    "use_amp": false,
+    "weight_decay": 0.0,
+    "visualize": true,
+    "log_interval": 25, 
+    "pred_head_type": "linear",
+    "encoder_def": {
+        "_target_": "rssl.net.UNetEncoder",
+        "dim": "@spatial_dims",
+        "input_ch": 1,
+        "out_dim": 256,
+        "norm_type": "instance" 
+    },
+    "decoder_def": {
+        "_target_": "rssl.net.UNetDecoder",
+        "dim": "@spatial_dims",
+        "input_ch": 512,
+        "out_dim": 3,
+        "norm_type": "instance" 
+    }
+}

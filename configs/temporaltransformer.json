@@ -1,0 +1,30 @@
+{
+    "run_name": "temporaltransformer_tokendim2048_numlayers12",
+    "run_mode": "train",
+    "dataset_type":"act",
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "batch_size": 1,
+    "lr": 1e-4,
+    "n_epochs": 10000,
+    "steps_per_epoch": null,
+    "num_workers": 2,
+    "use_amp": false,
+    "seed": 23,
+    "weight_decay": 0,
+    "visualize": true,
+    "debug_mode": false,
+    "data_path": "/simurgh/group/ACT/data/bids",
+    "demo_csv": "/simurgh/group/ACT/demographics.csv",
+    "resume_latest": true,
+    "load_path": null,
+    "use_profiler": false,
+    "loss_type": "xe",
+    "log_interval": 50,
+    "model_def": {
+        "_target_": "actgen.model.VolumetricTrajectoryModel",
+        "num_classes": 4,
+        "token_dim": 2048,
+        "num_transformer_layers": 12
+    }
+}

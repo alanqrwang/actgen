@@ -1,0 +1,6 @@
+{
+    "wandb_project_name":"act",
+    "wandb_api_key_path": null,
+    "save_dir": "/simurgh/u/alanqw/experiments/act/",
+    "use_wandb": true
+}

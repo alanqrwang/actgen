@@ -1,0 +1,46 @@
+{
+<<<<<<< HEAD
+    "run_name": "sslmae_epoch2250_mask0.75_hidden768_mlp3072_sexclassification",
+    "pretrain_type": "sslmae",
+    "label_name": "sex",
+=======
+    "run_name": "age_regressor_for_evaluation_t1all_agebalanced_batch1_lr0.0001",
+    "pretrain_type": "sslmae",
+    "label_name": "age",
+>>>>>>> 9abb11707ca6ada73f8c722c6f7f99edbf347d65
+    "grad_loss_weight": 5,
+    "mask_ratio": 0.75,
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "out_channels": 3,
+    "batch_size": 1,
+    "lr": 1e-5,
+    "n_epochs": 5000,
+    "weight_decay": 1e-5,
+    "steps_per_epoch": 100,
+    "val_steps_per_epoch": 100,
+    "num_workers": 2,
+    "use_amp": false,
+    "seed": 23,
+    "pred_head_type": "cls_token",
+<<<<<<< HEAD
+    "pretrained_load_path": "/simurgh/u/alanqw/experiments/__pretrain____pretrain__sslmaevit_hiddensize768_mask0.75_sincos_noamp_datat1fangrui_batch1_lr0.0001_seed23/checkpoints/pretrained_epoch2250_model.pth.tar",
+=======
+>>>>>>> 9abb11707ca6ada73f8c722c6f7f99edbf347d65
+    "encoder_def": {
+        "_target_": "monai.networks.nets.ViT",
+        "in_channels": 1,
+        "img_size": [160, 192, 176],
+        "patch_size": [16, 16, 16],
+        "hidden_size": 768,
+        "mlp_dim": 3072,
+        "num_layers": 12,
+        "num_heads": 12,
+        "proj_type": "conv",
+        "pos_embed_type": "sincos",
+        "classification": true,
+        "num_classes": 1,
+        "dropout_rate": 0.0,
+        "spatial_dims": "@spatial_dims"
+    }
+}
