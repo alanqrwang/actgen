@@ -14,12 +14,6 @@
 
 source activate keymorph
 
-<<<<<<< HEAD
 python /sailhome/alanqw/actgen/scripts/run.py \
     -c $1 \
     -e /afs/cs.stanford.edu/u/alanqw/actgen/configs/environment.json
-=======
-python /sailhome/alanqw/rssl/scripts/run.py \
-    -c $1 \
-    -e /afs/cs.stanford.edu/u/alanqw/rssl/configs/environment.json
->>>>>>> 9abb11707ca6ada73f8c722c6f7f99edbf347d65
