@@ -6,7 +6,7 @@ from . import layers
 from collections.abc import Sequence
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
-from rssl.unet3d import UNet3D
+from actgen.unet3d.model import UNet3D
 
 h_dims = [32, 64, 64, 128, 128, 256, 256, 512]
 

@@ -25,7 +25,7 @@ from scripts.script_utils import (
     define_instance,
 )
 from scripts.train import run_train, run_val
-from stai_utils.datasets.dataset_utils import T1All
+# from stai_utils.datasets.dataset_utils import T1All
 
 
 def parse_args():
@@ -123,6 +123,20 @@ def get_data(args):
                 #     ),
                 # ),
                 # tio.Lambda(keymorph_utils.rescale_intensity, include=("img",)),
+            ]
+        )
+        dataset = act_dataset.ACTDataset(args.data_path, args.demo_csv)
+    elif args.dataset_type == "actbinary":
+        # Transform function to change to binary class (didn't know where else to put it)
+        def binary_label_transform(subject):
+            if "group" in subject:
+                subject["group"] = 1 if subject["group"] == 1 else 0
+            return subject
+        transform = tio.Compose(
+            [
+                tio.ToCanonical(),
+                tio.Resample("T1_baseline_ses-01"),
+                binary_label_transform
             ]
         )
         dataset = act_dataset.ACTDataset(args.data_path, args.demo_csv)

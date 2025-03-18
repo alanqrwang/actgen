@@ -26,7 +26,7 @@ def get_torchio_subjects(bids_root, demographics_csv):
     """
     df = pd.read_csv(demographics_csv)
     t1_images = glob.glob(
-        os.path.join(bids_root, "*", "*", "sub-*", "ses-*", "anat", "*_T1w.nii.gz")
+        os.path.join(bids_root, "*", "*", "sub-*", "ses-*", "anat", "*_T1w_mni_ants_rigid.nii.gz")
     )
 
     subject_dict = defaultdict(dict)

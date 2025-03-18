@@ -44,23 +44,23 @@ def run_train(train_loader, model, model_ema, optimizer, args):
         imgs = []
         if "T1_baseline_ses-01" in subject:
             imgs.append(subject["T1_baseline_ses-01"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T3_6mo_ses-03" in subject:
             imgs.append(subject["T3_6mo_ses-03"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T4_12mo_ses-04" in subject:
             imgs.append(subject["T4_12mo_ses-04"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T5_18mo_ses-05" in subject:
             imgs.append(subject["T5_18mo_ses-05"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         imgs = torch.stack(imgs, dim=1).float().to(args.device)
         label = torch.tensor(subject["group"]).long().to(args.device)
-        print(imgs.shape)
+        # print(imgs.shape)
 
         # Move to device
         # img = img.float().to(args.device)
@@ -90,8 +90,8 @@ def run_train(train_loader, model, model_ema, optimizer, args):
                 else:
                     model_out = model(imgs)
                 model_out_ema = model_ema(imgs)
-                print("model out", model_out.shape)
-                print("label", label, label.shape)
+                # print("model out", model_out.shape)
+                # print("label", label, label.shape)
 
                 # Compute metrics
                 metrics = {}
@@ -174,23 +174,23 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         imgs = []
         if "T1_baseline_ses-01" in subject:
             imgs.append(subject["T1_baseline_ses-01"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T3_6mo_ses-03" in subject:
             imgs.append(subject["T3_6mo_ses-03"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T4_12mo_ses-04" in subject:
             imgs.append(subject["T4_12mo_ses-04"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         if "T5_18mo_ses-05" in subject:
             imgs.append(subject["T5_18mo_ses-05"][tio.DATA])
-        else:
-            imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        # else:
+        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
         imgs = torch.stack(imgs, dim=1).float().to(args.device)
         label = torch.tensor(subject["group"]).long().to(args.device)
-        print(imgs.shape)
+        # print(imgs.shape)
 
         with torch.set_grad_enabled(False):
             with torch.amp.autocast(
@@ -216,8 +216,8 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
                 else:
                     model_out = model(imgs)
                 model_out_ema = model_ema(imgs)
-                print("model out", model_out.shape)
-                print("label", label, label.shape)
+                # print("model out", model_out.shape)
+                # print("label", label, label.shape)
 
                 # Compute metrics
                 metrics = {}
