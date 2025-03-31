@@ -112,6 +112,7 @@ def get_data(args):
                 tio.ToCanonical(),
                 tio.Resample("T1_baseline_ses-01"),
                 tio.CropOrPad(args.dataset_def["img_size"]),
+                tio.RescaleIntensity(out_min_max=(0, 1), percentiles=(0, 99.5)),
             ]
         )
         dataset = act_dataset.ACTDataset(args.data_path, args.demo_csv)
@@ -127,6 +128,7 @@ def get_data(args):
                 tio.ToCanonical(),
                 tio.Resample("T1_baseline_ses-01"),
                 tio.CropOrPad(args.dataset_def["img_size"]),
+                tio.RescaleIntensity(out_min_max=(0, 1), percentiles=(0, 99.5)),
                 binary_label_transform,
             ]
         )

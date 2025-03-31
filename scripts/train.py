@@ -8,13 +8,8 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
 import wandb
 
-from actgen.utils import align_img, one_hot, one_hot_eval_synthseg
-from actgen.viz_tools import (
-    imshow_registration_2d,
-    imshow_registration_3d,
-    imshow_channels,
-)
 import actgen.loss_ops as loss_ops
+from sklearn.metrics import roc_auc_score
 
 from scripts.script_utils import aggregate_dicts
 
@@ -67,6 +62,8 @@ def run_train(train_loader, model, model_ema, optimizer, args):
     model.train()
 
     res = []
+    all_labels = []
+    all_probs = []
     img_size = args.dataset_def["img_size"]
 
     for step_idx, subject in enumerate(train_loader):
@@ -125,6 +122,9 @@ def run_train(train_loader, model, model_ema, optimizer, args):
                 # model_out_ema = model_ema(imgs)
                 # print("model out", model_out.shape)
                 # print("label", label, label.shape)
+                probs = F.softmax(model_out, dim=1)[:, 1]
+                all_labels.append(label.cpu())
+                all_probs.append(probs.cpu())
 
                 # Compute metrics
                 metrics = {}
@@ -179,7 +179,15 @@ def run_train(train_loader, model, model_ema, optimizer, args):
         #     plt.close()
 
     log_wandb_images(subject, label, "train")
-    return aggregate_dicts(res)
+
+    # Compute AUC
+    all_labels = torch.cat(all_labels, dim=0).cpu().detach().numpy()
+    all_probs = torch.cat(all_probs, dim=0).cpu().detach().numpy()
+    auc = roc_auc_score(all_labels, all_probs)
+
+    aggr_dict = aggregate_dicts(res)
+    aggr_dict["train/auc"] = auc
+    return aggr_dict
 
 
 def run_val(val_loader, model, model_ema, args, split_name="val"):
@@ -197,9 +205,11 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         scaler = torch.amp.GradScaler("cuda")
 
     model.train()
-    img_size = args.dataset_def["img_size"]
 
     res = []
+    all_labels = []
+    all_probs = []
+    img_size = args.dataset_def["img_size"]
 
     for step_idx, subject in enumerate(val_loader):
         if args.steps_per_epoch and step_idx == args.steps_per_epoch:
@@ -250,9 +260,10 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
                     )
                 else:
                     model_out = model(imgs)
-                # model_out_ema = model_ema(imgs)
-                # print("model out", model_out.shape)
-                # print("label", label, label.shape)
+
+                probs = F.softmax(model_out, dim=1)[:, 1]
+                all_labels.append(label.cpu())
+                all_probs.append(probs.cpu())
 
                 # Compute metrics
                 metrics = {}
@@ -298,4 +309,12 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         #     plt.close()
 
     log_wandb_images(subject, label, split_name)
-    return aggregate_dicts(res)
+
+    # Compute AUC
+    all_labels = torch.cat(all_labels, dim=0).cpu().detach().numpy()
+    all_probs = torch.cat(all_probs, dim=0).cpu().detach().numpy()
+    auc = roc_auc_score(all_labels, all_probs)
+
+    aggr_dict = aggregate_dicts(res)
+    aggr_dict[f"{split_name}/auc"] = auc
+    return aggr_dict
