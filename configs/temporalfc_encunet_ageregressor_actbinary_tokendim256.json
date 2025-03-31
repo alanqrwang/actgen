@@ -1,5 +1,5 @@
 {
-    "run_name": "temporalfc_encunet_ageregressor_tokendim256_lr1e-5",
+    "run_name": "binary_temporalfc_encunet_ageregressor_tokendim256_lr1e-5",
     "run_mode": "train",
     "dataset_def": {
         "dataset_type":"actbinary",

@@ -15,14 +15,16 @@ print(layout)
 
 # Find all T1-weighted images
 # t1w_files = layout.get(suffix='T1w', extension=['nii', 'nii.gz'], return_type='file')
-t1w_files = glob(BIDS_DIR + "*/*/sub-*/ses-*/anat/*_T1w.nii.gz")
-# t1w_files = glob(BIDS_DIR + "*/*/sub-*/ses-*/anat/*_FLAIR.nii.gz")
+# t1w_files = glob(BIDS_DIR + "*/*/sub-*/ses-*/anat/*_T1w.nii.gz")
+# print(f"Found {len(t1w_files)} T1w images.")
+flair_files = glob(BIDS_DIR + "*/*/sub-*/ses-*/anat/*_FLAIR.nii.gz")
+print(f"Found {len(flair_files)} FLAIR images.")
 
-print(f"Found {len(t1w_files)} T1w images.")
+files = flair_files
 
 # === PROCESSING EACH SUBJECT ===
-for i, t1w_file in enumerate(t1w_files):
-    print(f"\n\n\nPROCESSING {i+1}/{len(t1w_files)}")
+for i, t1w_file in enumerate(files):
+    print(f"\n\n\nPROCESSING {i+1}/{len(files)}")
     # Extract subject ID and directory
     subject = layout.parse_file_entities(t1w_file)["subject"]
     subject_dir = os.path.dirname(t1w_file)  # Directory where original file is stored
