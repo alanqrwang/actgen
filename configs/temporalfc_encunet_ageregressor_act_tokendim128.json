@@ -1,0 +1,41 @@
+{
+    "run_name": "temporalfc_encunet_ageregressor_tokendim256_lr1e-5",
+    "run_mode": "train",
+    "dataset_def": {
+        "dataset_type":"act",
+        "img_size": [160, 192, 176]
+    },
+    "token_dim" : 256,
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "batch_size": 1,
+    "lr": 1e-5,
+    "n_epochs": 10000,
+    "steps_per_epoch": null,
+    "num_workers": 2,
+    "use_amp": false,
+    "seed": 23,
+    "weight_decay": 0,
+    "visualize": true,
+    "debug_mode": false,
+    "data_path": "/simurgh/group/ACT/data/bids",
+    "demo_csv": "/simurgh/group/ACT/demographics.csv",
+    "resume_latest": false,
+    "load_path": null,
+    "load_encoder_path": "/simurgh/u/alanqw/experiments/__train__age_regressor_for_evaluation_t1all_agebalanced_batch1_lr0.0001_datat1all_agebalanced_batch1_lr0.0001_seed23/checkpoints/epoch110_trained_model.pth.tar",
+    "use_profiler": false,
+    "loss_type": "xe",
+    "log_interval": 50,
+    "encoder_def": {
+        "_target_": "actgen.net.UNetEncoder",
+        "dim" : 3,
+        "input_ch": 1,
+        "out_dim": "@token_dim",
+        "norm_type" : "instance"
+    },
+    "classifier_def": {
+        "_target_": "actgen.model.TemporalFC",
+        "token_dim": "@token_dim",
+        "num_classes": 4
+    }
+}

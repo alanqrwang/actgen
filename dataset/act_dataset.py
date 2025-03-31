@@ -4,6 +4,9 @@ import torchio as tio
 from collections import defaultdict
 from pprint import pprint
 import pandas as pd
+import random
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 GROUP_MAP = {
     "Stretching and MLA": 0,
@@ -26,7 +29,9 @@ def get_torchio_subjects(bids_root, demographics_csv):
     """
     df = pd.read_csv(demographics_csv)
     t1_images = glob.glob(
-        os.path.join(bids_root, "*", "*", "sub-*", "ses-*", "anat", "*_T1w_mni_ants_rigid.nii.gz")
+        os.path.join(
+            bids_root, "*", "*", "sub-*", "ses-*", "anat", "*_T1w_mni_ants_rigid.nii.gz"
+        )
     )
 
     subject_dict = defaultdict(dict)
@@ -60,7 +65,7 @@ def get_torchio_subjects(bids_root, demographics_csv):
         pprint(visits.keys())
         subjects.append(tio.Subject(**visits))
 
-        # --- Statistics Printing ---
+    # --- Statistics Printing ---
     # Initialize counters for groups and visits
     group_counts = defaultdict(int)
     visit_counts = defaultdict(int)
@@ -100,24 +105,31 @@ def get_torchio_subjects(bids_root, demographics_csv):
 
 class ACTDataset:
     def __init__(
-        self, root_bids_path, demo_csv, batch_size=8, num_workers=4, shuffle=True
+        self, root_bids_path, demo_csv, batch_size=8, num_workers=4, shuffle=True, seed=42
     ):
         """
-        Initialize the ADNI dataset class.
+        Initialize the ACT dataset class with stratified splitting.
 
         Parameters:
-        - subjects: list of torchio.Subject objects
-        - batch_size: number of samples per batch
-        - num_workers: number of subprocesses to use for data loading
-        - shuffle: whether to shuffle the dataset before splitting
+        - root_bids_path: Path to the BIDS dataset.
+        - demo_csv: Path to the demographics CSV.
+        - batch_size: Number of samples per batch.
+        - num_workers: Number of subprocesses to use for data loading.
+        - shuffle: Whether to shuffle the dataset before splitting.
+        - seed: Random seed for reproducibility.
         """
         self.subjects = get_torchio_subjects(root_bids_path, demo_csv)
 
-        split_idx_1 = int(0.8 * len(self.subjects))
-        split_idx_2 = int(0.9 * len(self.subjects))
-        self.train_subjects = self.subjects[:split_idx_1]
-        self.val_subjects = self.subjects[split_idx_1:split_idx_2]
-        self.test_subjects = self.subjects[split_idx_2:]
+        # Extract group labels
+        group_labels = np.array([subj["group"] for subj in self.subjects])
+
+        # Perform stratified split
+        train_subjects, val_subjects = train_test_split(
+            self.subjects, test_size=0.1, stratify=group_labels, random_state=seed
+        )
+
+        self.train_subjects = train_subjects
+        self.val_subjects = val_subjects
 
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -153,40 +165,43 @@ class ACTDataset:
         )
         return val_loader
 
-    def get_test_loader(self, batch_size, num_workers, transform=None):
-        """
-        Get the DataLoader for the test set.
+    # def get_test_loader(self, batch_size, num_workers, transform=None):
+    #     """
+    #     Get the DataLoader for the test set.
 
-        Returns:
-        - test_loader: DataLoader for the test set
-        """
-        test_dataset = tio.SubjectsDataset(self.test_subjects, transform=transform)
-        test_loader = tio.SubjectsLoader(
-            test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False
-        )
-        return test_loader
+    #     Returns:
+    #     - test_loader: DataLoader for the test set
+    #     """
+    #     test_dataset = tio.SubjectsDataset(self.test_subjects, transform=transform)
+    #     test_loader = tio.SubjectsLoader(
+    #         test_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False
+    #     )
+    #     return test_loader
 
 
 if __name__ == "__main__":
     dataset = ACTDataset(
         "/simurgh/group/ACT/data/bids", "/simurgh/group/ACT/demographics.csv"
     )
-    train_loader = dataset.get_train_loader(8, 4)
-    val_loader = dataset.get_val_loader(8, 4)
-    test_loader = dataset.get_test_loader(8, 4)
+    train_loader = dataset.get_train_loader(1, 1)
+    val_loader = dataset.get_val_loader(1, 1)
+    # test_loader = dataset.get_test_loader(1, 1)
 
     print(f"Train: {len(train_loader)} batches")
     print(f"Val: {len(val_loader)} batches")
-    print(f"Test: {len(test_loader)} batches")
+    # print(f"Test: {len(test_loader)} batches")
 
     for batch in train_loader:
         print(batch)
+        print(batch["T1_baseline_ses-01"]["data"].shape)
         break
 
     for batch in val_loader:
         print(batch)
+        print(batch["T1_baseline_ses-01"]["data"].shape)
         break
 
-    for batch in test_loader:
-        print(batch)
-        break
+    # for batch in test_loader:
+    #     print(batch)
+    #     print(batch["T1_baseline_ses-01"]["data"].shape)
+    #     break

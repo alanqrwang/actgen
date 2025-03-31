@@ -6,6 +6,7 @@ import torchio as tio
 import time
 from torch.profiler import profile, record_function, ProfilerActivity
 import matplotlib.pyplot as plt
+import wandb
 
 from actgen.utils import align_img, one_hot, one_hot_eval_synthseg
 from actgen.viz_tools import (
@@ -16,6 +17,37 @@ from actgen.viz_tools import (
 import actgen.loss_ops as loss_ops
 
 from scripts.script_utils import aggregate_dicts
+
+
+def log_wandb_images(subject, label, split_name):
+    """Logs a grid of timepoint scans for a single subject to wandb."""
+    imgs_list = []
+    timepoints = [
+        "T1_baseline_ses-01",
+        "T3_6mo_ses-03",
+        "T4_12mo_ses-04",
+        "T5_18mo_ses-05",
+    ]
+
+    for tp in timepoints:
+        if tp in subject:
+            img = (
+                subject[tp][tio.DATA][0, 0].cpu().detach().numpy()
+            )  # Select first batch and first channel
+            imgs_list.append(img)
+
+    if imgs_list:
+        fig, axes = plt.subplots(1, len(imgs_list), figsize=(12, 4))
+        if len(imgs_list) == 1:
+            axes = [axes]  # Ensure it's iterable when there's only one image
+        for ax, img, tp in zip(axes, imgs_list, timepoints[: len(imgs_list)]):
+            ax.imshow(img[img.shape[0] // 2], cmap="gray")  # Show middle slice
+            ax.set_title(tp)
+            ax.axis("off")
+
+        plt.suptitle(f"Label: {label.item()}")
+        wandb.log({f"{split_name}/subject_scans": wandb.Image(fig)})
+        plt.close(fig)
 
 
 def run_train(train_loader, model, model_ema, optimizer, args):
@@ -35,6 +67,7 @@ def run_train(train_loader, model, model_ema, optimizer, args):
     model.train()
 
     res = []
+    img_size = args.dataset_def["img_size"]
 
     for step_idx, subject in enumerate(train_loader):
         if args.steps_per_epoch and step_idx == args.steps_per_epoch:
@@ -44,20 +77,20 @@ def run_train(train_loader, model, model_ema, optimizer, args):
         imgs = []
         if "T1_baseline_ses-01" in subject:
             imgs.append(subject["T1_baseline_ses-01"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T3_6mo_ses-03" in subject:
             imgs.append(subject["T3_6mo_ses-03"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T4_12mo_ses-04" in subject:
             imgs.append(subject["T4_12mo_ses-04"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T5_18mo_ses-05" in subject:
             imgs.append(subject["T5_18mo_ses-05"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         imgs = torch.stack(imgs, dim=1).float().to(args.device)
         label = torch.tensor(subject["group"]).long().to(args.device)
         # print(imgs.shape)
@@ -89,7 +122,7 @@ def run_train(train_loader, model, model_ema, optimizer, args):
                     )
                 else:
                     model_out = model(imgs)
-                model_out_ema = model_ema(imgs)
+                # model_out_ema = model_ema(imgs)
                 # print("model out", model_out.shape)
                 # print("label", label, label.shape)
 
@@ -121,7 +154,7 @@ def run_train(train_loader, model, model_ema, optimizer, args):
         end_time = time.time()
         metrics["train/epoch_time"] = end_time - start_time
 
-        model_ema.update()
+        # model_ema.update()
 
         # Convert metrics to numpy
         metrics = {
@@ -145,6 +178,7 @@ def run_train(train_loader, model, model_ema, optimizer, args):
         #     plt.show()
         #     plt.close()
 
+    log_wandb_images(subject, label, "train")
     return aggregate_dicts(res)
 
 
@@ -163,6 +197,7 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         scaler = torch.amp.GradScaler("cuda")
 
     model.train()
+    img_size = args.dataset_def["img_size"]
 
     res = []
 
@@ -174,20 +209,20 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         imgs = []
         if "T1_baseline_ses-01" in subject:
             imgs.append(subject["T1_baseline_ses-01"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T3_6mo_ses-03" in subject:
             imgs.append(subject["T3_6mo_ses-03"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T4_12mo_ses-04" in subject:
             imgs.append(subject["T4_12mo_ses-04"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         if "T5_18mo_ses-05" in subject:
             imgs.append(subject["T5_18mo_ses-05"][tio.DATA])
-        # else:
-        #     imgs.append(torch.zeros((1, 1, 192, 256, 256)))
+        else:
+            imgs.append(torch.full((args.batch_size, 1, *img_size), float("nan")))
         imgs = torch.stack(imgs, dim=1).float().to(args.device)
         label = torch.tensor(subject["group"]).long().to(args.device)
         # print(imgs.shape)
@@ -215,7 +250,7 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
                     )
                 else:
                     model_out = model(imgs)
-                model_out_ema = model_ema(imgs)
+                # model_out_ema = model_ema(imgs)
                 # print("model out", model_out.shape)
                 # print("label", label, label.shape)
 
@@ -238,7 +273,7 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         end_time = time.time()
         metrics[f"{split_name}/epoch_time"] = end_time - start_time
 
-        model_ema.update()
+        # model_ema.update()
 
         # Convert metrics to numpy
         metrics = {
@@ -262,4 +297,5 @@ def run_val(val_loader, model, model_ema, args, split_name="val"):
         #     plt.show()
         #     plt.close()
 
+    log_wandb_images(subject, label, split_name)
     return aggregate_dicts(res)

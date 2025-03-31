@@ -1,0 +1,40 @@
+{
+    "run_name": "temporalfc_tokendim128_lr1e-5",
+    "run_mode": "train",
+    "dataset_def": {
+        "dataset_type":"actbinary",
+        "img_size": [160, 192, 176]
+    },
+    "spatial_dims": 3,
+    "image_channels": 1,
+    "batch_size": 1,
+    "lr": 1e-5,
+    "n_epochs": 10000,
+    "steps_per_epoch": null,
+    "num_workers": 2,
+    "use_amp": false,
+    "seed": 23,
+    "weight_decay": 0,
+    "visualize": true,
+    "debug_mode": false,
+    "data_path": "/simurgh/group/ACT/data/bids",
+    "demo_csv": "/simurgh/group/ACT/demographics.csv",
+    "resume_latest": false,
+    "load_path": null,
+    "load_encoder_path": "/simurgh/u/alanqw/experiments/__pretrain____pretrain__sslmaevit_hiddensize768_mask0.75_sincos_noamp_datat1fangrui_batch1_lr0.0001_seed23/checkpoints/pretrained_epoch2625_model.pth.tar",
+    "use_profiler": false,
+    "loss_type": "xe",
+    "log_interval": 50,
+    "encoder_def": {
+        "_target_": "actgen.net.MAEViTEncoder",
+        "in_channels": 1,
+        "patch_size": 16,
+        "img_size": [160, 192, 176],
+        "classification": true,
+        "num_classes": 128
+    },
+    "classifier_def": {
+        "_target_": "actgen.model.TemporalFC",
+        "num_classes": 2
+    }
+}

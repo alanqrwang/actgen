@@ -15,7 +15,6 @@ import wandb
 from dataset import (
     act_dataset,
 )
-from actgen import utils as keymorph_utils
 from scripts import script_utils
 from scripts.eval import run_eval
 from scripts.script_utils import (
@@ -25,7 +24,8 @@ from scripts.script_utils import (
     define_instance,
 )
 from scripts.train import run_train, run_val
-# from stai_utils.datasets.dataset_utils import T1All
+
+from actgen.model import VolumetricTemporalModel
 
 
 def parse_args():
@@ -66,7 +66,7 @@ def create_dirs(args):
     arguments = (
         args.run_name
         + "_data"
-        + str(args.dataset_type)
+        + str(args.dataset_def["dataset_type"])
         + "_batch"
         + str(args.batch_size)
         + "_lr"
@@ -106,37 +106,28 @@ def set_seed(args):
 
 
 def get_data(args):
-    if args.dataset_type == "act":
+    if args.dataset_def["dataset_type"] == "act":
         transform = tio.Compose(
             [
                 tio.ToCanonical(),
                 tio.Resample("T1_baseline_ses-01"),
-                # tio.Resample((1, 1, 1)),
-                # tio.CropOrPad(
-                #     (192, 256, 256),
-                #     padding_mode=0,
-                #     include=(
-                #         "T1_baseline_ses-01",
-                #         "T3_6mo_ses-03",
-                #         "T4_12mo_ses-04",
-                #         "T5_18mo_ses-05",
-                #     ),
-                # ),
-                # tio.Lambda(keymorph_utils.rescale_intensity, include=("img",)),
+                tio.CropOrPad(args.dataset_def["img_size"]),
             ]
         )
         dataset = act_dataset.ACTDataset(args.data_path, args.demo_csv)
-    elif args.dataset_type == "actbinary":
-        # Transform function to change to binary class (didn't know where else to put it)
+    elif args.dataset_def["dataset_type"] == "actbinary":
+        # Transform function to change to binary class
         def binary_label_transform(subject):
             if "group" in subject:
                 subject["group"] = 1 if subject["group"] == 1 else 0
             return subject
+
         transform = tio.Compose(
             [
                 tio.ToCanonical(),
                 tio.Resample("T1_baseline_ses-01"),
-                binary_label_transform
+                tio.CropOrPad(args.dataset_def["img_size"]),
+                binary_label_transform,
             ]
         )
         dataset = act_dataset.ACTDataset(args.data_path, args.demo_csv)
@@ -151,14 +142,26 @@ def get_data(args):
         "val": dataset.get_val_loader(
             args.batch_size, args.num_workers, transform=transform
         ),
-        "test": dataset.get_test_loader(
-            args.batch_size, args.num_workers, transform=transform
-        ),
+        # "test": dataset.get_test_loader(
+        #     args.batch_size, args.num_workers, transform=transform
+        # ),
     }
 
 
+def get_encoder(args):
+    return define_instance(args, "encoder_def")
+
+
+def get_temporal_classifier(args):
+    return define_instance(args, "classifier_def")
+
+
 def get_model(args):
-    model = define_instance(args, "model_def")
+    encoder = get_encoder(args)
+    temporal_classifier = get_temporal_classifier(args)
+    model = VolumetricTemporalModel(
+        encoder, temporal_classifier, token_dim=args.token_dim
+    )
 
     model_ema = EMA(
         model,
@@ -222,6 +225,11 @@ def main():
             optimizer,
             device=args.device,
         )
+    if args.load_encoder_path is not None:
+        print(f"Loading encoder checkpoint from {args.load_encoder_path}")
+        ckpt_state, model = script_utils.load_checkpoint(
+            args.load_encoder_path, model, device=args.device, strict=False
+        )
 
     if args.run_mode == "eval":
         pass
@@ -258,18 +266,18 @@ def main():
             for metric_name, metric in val_epoch_stats.items():
                 print(f"[Val Stat] {metric_name}: {metric:.5f}")
 
-            test_epoch_stats = run_val(
-                loaders["test"], model, model_ema, args, split_name="test"
-            )
+            # test_epoch_stats = run_val(
+            #     loaders["test"], model, model_ema, args, split_name="test"
+            # )
 
-            for metric_name, metric in test_epoch_stats.items():
-                print(f"[Test Stat] {metric_name}: {metric:.5f}")
+            # for metric_name, metric in test_epoch_stats.items():
+            #     print(f"[Test Stat] {metric_name}: {metric:.5f}")
 
             if args.use_wandb and not args.debug_mode:
                 epoch_stats = {
                     **train_epoch_stats,
                     **val_epoch_stats,
-                    **test_epoch_stats,
+                    # **test_epoch_stats,
                 }
                 wandb.log(epoch_stats)
 

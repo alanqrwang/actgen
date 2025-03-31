@@ -11,6 +11,31 @@ from actgen.unet3d.model import UNet3D
 h_dims = [32, 64, 64, 128, 128, 256, 256, 512]
 
 
+# 3D CNN Encoder for a single scan
+class VolumetricEncoder(nn.Module):
+    def __init__(self, in_channels=1, token_dim=128):
+        super(VolumetricEncoder, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv3d(in_channels, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool3d(2),
+            nn.Conv3d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool3d(2),
+            nn.Conv3d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool3d(1),  # Global pooling to get [batch, 128, 1, 1, 1]
+        )
+        self.fc = nn.Linear(128, token_dim)
+
+    def forward(self, x):
+        # x shape: [batch, in_channels, D, H, W]
+        x = self.encoder(x)  # [batch, 128, 1, 1, 1]
+        x = x.view(x.size(0), -1)  # [batch, 128]
+        token = self.fc(x)  # [batch, token_dim]
+        return token
+
+
 class UNetEncoder(nn.Module):
     def __init__(self, dim, input_ch, out_dim, norm_type):
         super().__init__()
@@ -46,6 +71,8 @@ class UNetEncoder(nn.Module):
 
         self.block9 = layers.ConvBlockDown(h_dims[6], out_dim, 1, norm_type, False, dim)
 
+        self.avgpool = nn.AdaptiveAvgPool3d(1)
+
     def forward(self, x):
         out = self.block1(x)
         out = self.block2(out)
@@ -55,6 +82,7 @@ class UNetEncoder(nn.Module):
         out = self.block6(out)
         out = self.block7(out)
         out = self.block9(out)
+        out = self.avgpool(out).view(out.size(0), -1)
         return out
 
 
@@ -117,29 +145,6 @@ class UNetDecoderViT(nn.Module):
         out = self.block6(out)
         out = self.block7(out)
         out = self.block8(out)
-        out = self.block9(out)
-        return out
-
-
-class UNetDecoderHalf(nn.Module):
-    def __init__(self, dim, input_ch, out_dim, norm_type):
-        super().__init__()
-        self.dim = dim
-
-        self.block1 = layers.ConvBlockUp(input_ch, h_dims[6], 1, norm_type, False, dim)
-        self.block2 = layers.ConvBlockUp(h_dims[6], h_dims[4], 1, norm_type, True, dim)
-
-        self.block4 = layers.ConvBlockUp(h_dims[4], h_dims[2], 1, norm_type, True, dim)
-
-        self.block6 = layers.ConvBlockUp(h_dims[2], h_dims[0], 1, norm_type, True, dim)
-
-        self.block9 = layers.ConvBlockUp(h_dims[0], out_dim, 1, norm_type, False, dim)
-
-    def forward(self, x):
-        out = self.block1(x)
-        out = self.block2(out)
-        out = self.block4(out)
-        out = self.block6(out)
         out = self.block9(out)
         return out
 
@@ -382,7 +387,7 @@ class MAEViTEncoder(nn.Module):
 
         return x_masked, mask, ids_restore
 
-    def forward(self, img, mask_ratio):
+    def forward(self, img, mask_ratio=0):
         x = self.patch_embedding(img)
 
         x, token_mask, ids_restore = self.random_masking(x, mask_ratio)
@@ -396,7 +401,7 @@ class MAEViTEncoder(nn.Module):
         x = self.norm(x)
         if hasattr(self, "classification_head"):
             x = self.classification_head(x[:, 0])
-        return x, token_mask, ids_restore
+        return x
 
 
 class MAEViTDecoder(nn.Module):
@@ -552,7 +557,6 @@ class Unet3DEncoder(nn.Module):
         num_levels=4,
         is_segmentation=True,
         conv_padding=1,
-        **kwargs,
     ):
         model = UNet3D(
             in_channels=in_channels,
@@ -564,7 +568,6 @@ class Unet3DEncoder(nn.Module):
             num_levels=num_levels,
             is_segmentation=is_segmentation,
             conv_padding=conv_padding,
-            kwargs=kwargs,
         )
 
         self.encoder = model.encoder

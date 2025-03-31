@@ -8,7 +8,7 @@
 #SBATCH --gres=gpu:1 # if you need to use a GPU
 #SBATCH -p simurgh # specify partition
 #SBATCH --account=simurgh
-#SBATCH --exclude=simurgh2
+#SBATCH --exclude=simurgh1
 #SBATCH -o ./job_out/%j-train.out
 #SBATCH -e ./job_err/%j-train.err \ 
 

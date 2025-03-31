@@ -59,7 +59,13 @@ def initialize_wandb(config):
 
 
 def load_checkpoint(
-    checkpoint_path, model, optimizer=None, scheduler=None, device="cpu", key=None
+    checkpoint_path,
+    model,
+    optimizer=None,
+    scheduler=None,
+    device="cpu",
+    key=None,
+    strict=True,
 ):
     state = torch.load(checkpoint_path, map_location=torch.device(device))
     if key is None:
@@ -74,11 +80,9 @@ def load_checkpoint(
     # new_state_dict = {
     #     key.replace(".backbone", ""): value for key, value in state_dict.items()
     # }
-    print(state_dict.keys())
-    print("######")
-    print(model.state_dict().keys())
-    missing_keys, _ = model.load_state_dict(state_dict, strict=True)
+    missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=strict)
     print("Missing keys when loading checkpoint: ", missing_keys)
+    print("Unexpected keys when loading checkpoint: ", unexpected_keys)
 
     res = (state, model)
 
